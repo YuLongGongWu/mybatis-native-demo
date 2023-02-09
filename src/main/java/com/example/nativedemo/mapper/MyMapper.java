@@ -1,27 +1,25 @@
 package com.example.nativedemo.mapper;
 
 import com.example.nativedemo.entity.Message;
-import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Select;
 
 @Mapper
 public interface MyMapper {
 
-    @Insert("""
-          INSERT INTO messages (message)
-            VALUES (#{message})
-        """)
+//    @Insert("""
+//          INSERT INTO messages (message)
+//            VALUES (#{message})
+//        """)
     void insert(Message message);
 
-    @Select("""
-          SELECT
-            id
-            ,message
-          FROM
-            messages
-          WHERE
-            id = #{id}
-        """)
+//    @Select("""
+//          SELECT
+//            id
+//            ,message
+//          FROM
+//            messages
+//          WHERE
+//            id = #{id}
+//        """)
     Message select(Integer id);
 }

@@ -43,6 +43,12 @@
       <plugin>
         <groupId>org.graalvm.buildtools</groupId>
         <artifactId>native-maven-plugin</artifactId>
+          <configuration>
+            <buildArgs>
+                -H:Log=registerResource:5
+                --enable-url-protocols=http
+            </buildArgs>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.springframework.boot</groupId>

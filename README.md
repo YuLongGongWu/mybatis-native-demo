@@ -1,56 +1,76 @@
-# Requirements
+# 组件版本
 
-Requirements of this demo application are follows:
-
-* Docker
-* GraalVM 22.3+
-* JDK 17+
+* GraalVM 22.3.1
+* JDK 17
 * Spring Boot 3
-* MyBatis Spring Boot 3.0.1-SNAPSHOT + (Not release yet)
+* MyBatis Spring Boot 3.0.1-SNAPSHOT
 
-# How to build
+# 出现过的问题
 
-Start docker container for building native image.
+## Accessing an URL protocol that was not enabled. The URL protocol http is supported but not enabled by default.
 
-```
-docker run -v $(pwd):/work -v $HOME/.m2:/root/.m2 -it -w /work \
-  -e JAVA_HOME=/opt/graalvm-ce-java17-22.3.0 \
-  -e GRAALVM_HOME=/opt/graalvm-ce-java17-22.3.0 \
-  -e LANG=C.utf8　\
-  ghcr.io/graalvm/graalvm-ce:22.3.0 bash
-```
-
-```
-./mvnw -Pnative clean native:compile
-```
-
-# Hot to run
-
-Run the native image.
-
-```
-./target/mybatis-native-demo
+```text
+Caused by: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'myMapper': org.apache.ibatis.builder.BuilderException: Error creating document instance.  Cause: java.net.MalformedURLException: Accessing an URL protocol that was not enabled. The URL protocol http is supported but not enabled by default. It must be enabled by adding the --enable-url-protocols=http option to the native-image command.
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1751) ~[mybatis-native-demo:6.0.2]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:599) ~[mybatis-native-demo:6.0.2]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:521) ~[mybatis-native-demo:6.0.2]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:326) ~[mybatis-native-demo:6.0.2]
+        at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234) ~[mybatis-native-demo:6.0.2]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:324) ~[mybatis-native-demo:6.0.2]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:200) ~[mybatis-native-demo:6.0.2]
+        at org.springframework.beans.factory.config.DependencyDescriptor.resolveCandidate(DependencyDescriptor.java:254) ~[mybatis-native-demo:6.0.2]
+        at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1405) ~[mybatis-native-demo:6.0.2]
+        at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1325) ~[mybatis-native-demo:6.0.2]
+        at org.springframework.beans.factory.aot.AutowiredFieldValueResolver.resolveValue(AutowiredFieldValueResolver.java:189) ~[na:na]
+        ... 21 common frames omitted
 ```
 
-Print as following logs if building was success.
+* 解决方法
 
+buildArgs 处添加 --enable-url-protocols=http
+
+```xml
+      <plugin>
+        <groupId>org.graalvm.buildtools</groupId>
+        <artifactId>native-maven-plugin</artifactId>
+          <configuration>
+            <buildArgs>
+                --enable-url-protocols=http
+            </buildArgs>
+        </configuration>
+      </plugin>
 ```
 
-  .   ____          _            __ _ _
- /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
-( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
- \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
-  '  |____| .__|_| |_|_| |_\__, | / / / /
- =========|_|==============|___/=/_/_/_/
- :: Spring Boot ::                (v3.0.0)
+##  Failed to read external DTD 'mybatis-3-mapper.dtd'
 
-2022-11-28T00:28:25.613Z  INFO 1066 --- [           main] c.e.nativedemo.NativeDemoApplication     : Starting AOT-processed NativeDemoApplication using Java 17.0.5 with PID 1066 (/work/target/mybatis-native-demo started by root in /work)
-2022-11-28T00:28:25.613Z  INFO 1066 --- [           main] c.e.nativedemo.NativeDemoApplication     : No active profile set, falling back to 1 default profile: "default"
-2022-11-28T00:28:25.624Z  INFO 1066 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
-2022-11-28T00:28:25.627Z  INFO 1066 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:6071f201-b520-4724-a5af-4909be2349fc user=SA
-2022-11-28T00:28:25.627Z  INFO 1066 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
-2022-11-28T00:28:25.637Z  INFO 1066 --- [           main] c.e.nativedemo.NativeDemoApplication     : Started NativeDemoApplication in 0.058 seconds (process running for 0.062)
-Message[id=1, message=Hello World!]
-2022-11-28T00:28:25.639Z  INFO 1066 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
-2022-11-28T00:28:25.639Z  INFO 1066 --- [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+```text
+org.apache.ibatis.builder.BuilderException: Error creating document instance.  Cause: org.xml.sax.SAXParseException; lineNumber: 2; columnNumber: 108; External DTD: Failed to read external DTD 'mybatis-3-mapper.dtd', because 'http' access is not allowed due to restriction set by the accessExternalDTD property.
+        at org.apache.ibatis.parsing.XPathParser.createDocument(XPathParser.java:263) ~[na:na]
+        at org.apache.ibatis.parsing.XPathParser.<init>(XPathParser.java:127) ~[na:na]
+        at org.apache.ibatis.builder.xml.XMLMapperBuilder.<init>(XMLMapperBuilder.java:81) ~[na:na]
+        at org.apache.ibatis.builder.xml.XMLMapperBuilder.<init>(XMLMapperBuilder.java:76) ~[na:na]
+        at org.apache.ibatis.builder.annotation.MapperAnnotationBuilder.loadXmlResource(MapperAnnotationBuilder.java:178) ~[na:na]
+        at org.apache.ibatis.builder.annotation.MapperAnnotationBuilder.parse(MapperAnnotationBuilder.java:118) ~[na:na]        at org.apache.ibatis.binding.MapperRegistry.addMapper(MapperRegistry.java:72) ~[na:na]
+        at org.apache.ibatis.session.Configuration.addMapper(Configuration.java:872) ~[mybatis-native-demo:3.5.11]
+        at org.mybatis.spring.mapper.MapperFactoryBean.checkDaoConfig(MapperFactoryBean.java:80) ~[mybatis-native-demo:3.0.1]
+        at org.springframework.dao.support.DaoSupport.afterPropertiesSet(DaoSupport.java:44) ~[mybatis-native-demo:6.0.2]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeInitMethods(AbstractAutowireCapableBeanFactory.java:1797) ~[mybatis-native-demo:6.0.2]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1747) ~[mybatis-native-demo:6.0.2]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:599) ~[mybatis-native-demo:6.0.2]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:521) ~[mybatis-native-demo:6.0.2]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:326) ~[mybatis-native-demo:6.0.2]
+        at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234) ~[mybatis-native-demo:6.0.2]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:324) ~[mybatis-native-demo:6.0.2]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:200) ~[mybatis-native-demo:6.0.2]
+        at org.springframework.beans.factory.config.DependencyDescriptor.resolveCandidate(DependencyDescriptor.java:254) ~[mybatis-native-demo:6.0.2]
+        at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1405) ~[mybatis-native-demo:6.0.2]
+        at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1325) ~[mybatis-native-demo:6.0.2]
+```
+
+* 解决方法
+
+启动时添加jvm参数
+
+```shell
+./mybatis-native-demo -Djavax.xml.accessExternalDTD=all
 ```
